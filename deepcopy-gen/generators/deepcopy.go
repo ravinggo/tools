@@ -693,7 +693,7 @@ func (p *slicePool[T]) Put(value []T) {
 		return
 	}
 	idx := index(uint32(c))
-	if c != 1<<idx { // 不是Get获取的[]byte，放在前一个索引的Pool里面
+	if c != 1<<idx { // 不是Get获取的[]T，放在前一个索引的Pool里面
 		idx--
 	}
 	clear(value)

@@ -12,7 +12,9 @@ go install github.com/ravinggo/tools/deepcopy-gen@latest
 ```go
 // +k8s:deepcopy-gen=false
 ```
+### More information in the [output_tests](./output_tests) directory
 
+## command help
 ```go
  deepcopy-gen --help
 Usage of B:\opensource\tools\deepcopy-gen\deepcopy-gen:

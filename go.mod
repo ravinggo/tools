@@ -25,4 +25,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace k8s.io/gengo/v2 v2.0.0-20250130153323-76c5745d3511 => github.com/ravinggo/gengo/v2 v2.0.1
+replace k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 => github.com/ravinggo/gengo/v2 v2.0.1

@@ -689,6 +689,9 @@ func (p *slicePool[T]) Get(size int) []T {
 
 func (p *slicePool[T]) Put(value []T) {
 	c:=cap(value)
+	if c < 16 {
+		return
+	}
 	idx := index(uint32(c))
 	if c != 1<<idx { // 不是Get获取的[]byte，放在前一个索引的Pool里面
 		idx--

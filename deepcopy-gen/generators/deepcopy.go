@@ -668,6 +668,7 @@ func index(n uint32) uint32 {
 
 func (p *slicePool[T]) Get(size int) []T {
 	c := size
+    // Small memory allocation is too scattered. the reuse rate is relatively high, types start with len=16
 	if c < 16 {
 		c = 16
 	}
@@ -693,7 +694,8 @@ func (p *slicePool[T]) Put(value []T) {
 		return
 	}
 	idx := index(uint32(c))
-	if c != 1<<idx { // 不是Get获取的[]T，放在前一个索引的Pool里面
+    // []T not obtained by Get is placed in the Pool of the previous index
+	if c != 1<<idx { 
 		idx--
 	}
 	clear(value)

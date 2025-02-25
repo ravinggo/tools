@@ -330,7 +330,6 @@ type genDeepCopy struct {
 	allTypes      bool
 	registerTypes bool
 	imports       namer.ImportTracker
-	typesForInit  []*types.Type
 	usePool       bool
 	tMap          map[*types.Type]int
 	sMap          map[*types.Type]int
@@ -345,7 +344,6 @@ func NewGenDeepCopy(outputFilename, targetPackage string, boundingDirs []string,
 		boundingDirs:  boundingDirs,
 		allTypes:      allTypes,
 		registerTypes: registerTypes,
-		typesForInit:  make([]*types.Type, 0),
 		usePool:       usePool,
 		tMap:          make(map[*types.Type]int),
 		sMap:          make(map[*types.Type]int),
@@ -388,7 +386,6 @@ func (g *genDeepCopy) Filter(c *generator.Context, t *types.Type) bool {
 		return false
 	}
 	klog.V(3).Infof("Type %v is copyable", t)
-	g.typesForInit = append(g.typesForInit, t)
 	return true
 }
 
@@ -912,8 +909,8 @@ func (g *genDeepCopy) GenerateType(c *generator.Context, t *types.Type, w io.Wri
 				sw.Do("x:=($.|raw$)(*in)\n", underlyingType(t))
 				sw.Do("$.type|poolreset$(x)\n", args)
 			} else {
-				sw.Do("*in = nil\n", args)
 				sw.Do("$.type|poolreset$(*in)\n", args)
+				sw.Do("*in = nil\n", args)
 			}
 			sw.Do("}\n", nil)
 		} else {
@@ -922,7 +919,7 @@ func (g *genDeepCopy) GenerateType(c *generator.Context, t *types.Type, w io.Wri
 		}
 		sw.Do("}\n", args)
 
-		sw.Do("// ResetNoSelf puts the given value back into the pool.\n", args)
+		sw.Do("// ResetNoSelf puts the given field value back into the pool.\n", args)
 		if isReference(t) {
 			sw.Do("func (in $.type|raw$) ResetNoSelf() {\n", args)
 			sw.Do("{in:=&in\n", nil)
@@ -933,8 +930,32 @@ func (g *genDeepCopy) GenerateType(c *generator.Context, t *types.Type, w io.Wri
 		g.generateForReset(t, sw)
 		if isReference(t) {
 			sw.Do("}\n", nil)
+		}
+		sw.Do("}\n", args)
+
+		sw.Do("// ResetOnlySelf puts the given value back into the pool.\n", args)
+		if isReference(t) {
+			sw.Do("func (in $.type|raw$) ResetOnlySelf() {\n", args)
+		} else {
+			sw.Do("func (in *$.type|raw$) ResetOnlySelf() {\n", args)
+		}
+		sw.Do("if in == nil { return }\n", args)
+		if isReference(t) {
+			if underlyingType(t).Kind == types.Slice {
+				sw.Do("x:=($.|raw$)(in)\n", underlyingType(t))
+				sw.Do("$.type|poolresetslice$(x)\n", args)
+			} else if underlyingType(t).Kind == types.Map {
+				sw.Do("clear(in)\n", args)
+				sw.Do("x:=($.|raw$)(in)\n", underlyingType(t))
+				sw.Do("$.type|poolreset$(x)\n", args)
+			} else {
+
+				sw.Do("$.type|poolreset$(in)\n", args)
+				sw.Do("in = nil\n", args)
+			}
 		} else {
 			sw.Do("*in = $.type|raw${}\n", args)
+			sw.Do("$.type|poolreset$(in)\n", args)
 		}
 		sw.Do("}\n", args)
 	}

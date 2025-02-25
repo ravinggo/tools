@@ -70,7 +70,7 @@ func (in *Ttest) Reset() {
 	TtestPool.Put(in)
 }
 
-// ResetNoSelf puts the given value back into the pool.
+// ResetNoSelf puts the given field value back into the pool.
 func (in *Ttest) ResetNoSelf() {
 	if in == nil {
 		return
@@ -84,7 +84,15 @@ func (in *Ttest) ResetNoSelf() {
 		}
 		s_InnerSPool.Put(*in)
 	}
+}
+
+// ResetOnlySelf puts the given value back into the pool.
+func (in *Ttest) ResetOnlySelf() {
+	if in == nil {
+		return
+	}
 	*in = Ttest{}
+	TtestPool.Put(in)
 }
 
 var TtestPool = sync.Pool{New: func() any { return new(Ttest) }}

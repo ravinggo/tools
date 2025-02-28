@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//go:generate go run github.com/ravinggo/tools/deepcopy-gen --keepalive=0 --output-file zz_generated.deepcopy.go --go-header-file=../boilerplate.go.txt github.com/ravinggo/tools/deepcopy-gen/output_tests_no_ka/...
+//go:generate go run github.com/ravinggo/tools/deepcopy-gen --use-pool=0 --output-file zz_generated.deepcopy.go --go-header-file=../boilerplate.go.txt github.com/ravinggo/tools/deepcopy-gen/output_tests_no_ka/...
 package outputtests

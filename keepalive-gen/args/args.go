@@ -25,12 +25,13 @@ import (
 type Args struct {
 	OutputFile   string
 	GoHeaderFile string
+	UsePool      bool
 }
 
 // New returns default arguments for the generator.
 func New() *Args {
 	return &Args{
-
+		UsePool: true,
 	}
 }
 
@@ -43,6 +44,9 @@ func (args *Args) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(
 		&args.GoHeaderFile, "go-header-file", "",
 		"the path to a file containing boilerplate header text; the string \"YEAR\" will be replaced with the current 4-digit year",
+	)
+	fs.BoolVar(
+		&args.UsePool, "use-pool", true, "use sync.Pool mode",
 	)
 }
 

@@ -48,6 +48,7 @@ type genKeepAlive struct {
 	generator.GoGenerator
 	targetPackage string
 	imports       namer.ImportTracker
+	usePool       bool
 }
 
 type enabledTagValue struct {
@@ -109,7 +110,7 @@ func GetTargets(context *generator.Context, args *args.Args) []generator.Target 
 					},
 					GeneratorsFunc: func(c *generator.Context) (generators []generator.Generator) {
 						return []generator.Generator{
-							NewGenKeepAlive(args.OutputFile, pkg.Path),
+							NewGenKeepAlive(args.OutputFile, pkg.Path, args.UsePool),
 						}
 					},
 				},
@@ -119,12 +120,13 @@ func GetTargets(context *generator.Context, args *args.Args) []generator.Target 
 	return targets
 }
 
-func NewGenKeepAlive(outputFilename, targetPackage string) generator.Generator {
+func NewGenKeepAlive(outputFilename, targetPackage string, usePool bool) generator.Generator {
 	dc := &genKeepAlive{
 		GoGenerator: generator.GoGenerator{
 			OutputFilename: outputFilename,
 		},
 		targetPackage: targetPackage,
+		usePool:       usePool,
 	}
 	dc.imports = generator.NewImportTrackerForPackage(
 		targetPackage,
@@ -414,17 +416,6 @@ func getIDType(t *types.Type) *types.Type {
 	return nil
 }
 
-func (g *genKeepAlive) Init(c *generator.Context, w io.Writer) error {
-	sw := generator.NewSnippetWriter(w, c, "$", "$")
-
-	return sw.Error()
-}
-
-func (g *genKeepAlive) Finalize(c *generator.Context, w io.Writer) error {
-	sw := generator.NewSnippetWriter(w, c, "$", "$")
-	return sw.Error()
-}
-
 func (g *genKeepAlive) GenerateType(c *generator.Context, t *types.Type, w io.Writer) error {
 	if extractEnabledTypeTag(t) == nil {
 		return nil
@@ -490,17 +481,18 @@ func (g *genKeepAlive) GenerateType(c *generator.Context, t *types.Type, w io.Wr
 		if deepCopyIntoMethodOrDie(elem) == nil {
 			klog.Fatalf("DeepCopyInto method not found for type %s\n", elem.Name.String())
 		}
+		if g.usePool {
+			if resetMethodOrDie(elem) == nil {
+				klog.Fatalf("Reset method not found for type %s\n", elem.Name.String())
+			}
 
-		if resetMethodOrDie(elem) == nil {
-			klog.Fatalf("Reset method not found for type %s\n", elem.Name.String())
-		}
+			if resetNoSelfMethodOrDie(elem) == nil {
+				klog.Fatalf("ResetNoSelf method not found for type %s\n", elem.Name.String())
+			}
 
-		if resetNoSelfMethodOrDie(elem) == nil {
-			klog.Fatalf("ResetNoSelf method not found for type %s\n", elem.Name.String())
-		}
-
-		if resetOnlySelfMethodOrDie(elem) == nil {
-			klog.Fatalf("ResetOnlySelf method not found for type %s\n", elem.Name.String())
+			if resetOnlySelfMethodOrDie(elem) == nil {
+				klog.Fatalf("ResetOnlySelf method not found for type %s\n", elem.Name.String())
+			}
 		}
 		g.genOneField(ss, &t.Members[i])
 	}
@@ -627,12 +619,26 @@ func (g *genKeepAlive) genStruct(ss *structOrSlice, t *types.Member) {
 	sw.Do("}\n", args)
 
 	// ////////////////////////////////////////////////////
-	sw.Do("func Swap$.parent$$.type|raw$(d *$.parent$, p unsafe.Pointer) {\n", args)
-	sw.Do("u := (*$.type|raw$)(p)\n", args)
-	sw.Do("d.$.name$.ResetNoSelf()\n", args)
-	sw.Do("d.$.name$ = *u\n", args)
-	sw.Do("u.ResetOnlySelf()\n", args)
-	sw.Do("}\n", args)
+	if g.usePool {
+		sw.Do(
+			`
+func Swap$.parent$$.type|raw$(d *$.parent$, p unsafe.Pointer) {
+	u := (*$.type|raw$)(p)
+	d.$.name$.ResetNoSelf()
+	d.$.name$ = *u
+	u.ResetOnlySelf()
+}
+`, args,
+		)
+	} else {
+		sw.Do(
+			`
+func Swap$.parent$$.type|raw$(d *$.parent$, p unsafe.Pointer) {
+	d.$.name$ = *(*$.type|raw$)(p)
+}
+`, args,
+		)
+	}
 }
 
 func (g *genKeepAlive) genSlice(ss *structOrSlice, t *types.Member) {
@@ -861,8 +867,9 @@ func (d *$.parent$) Len$.elem|raw$() int {
 }
 `, args,
 	)
-	sw.Do(
-		`
+	if g.usePool {
+		sw.Do(
+			`
 func Swap$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
 	newV := (*$.elem|raw$)(pointer)
 	old, ok := keepalive.SliceFind(
@@ -894,7 +901,41 @@ func Delete$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
 	newV.Reset()
 }
 `, args,
+		)
+	} else {
+		sw.Do(
+			`
+func Swap$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
+	newV := (*$.elem|raw$)(pointer)
+	old, ok := keepalive.SliceFind(
+		d.$.name$, func(v *$.elem|raw$) bool {
+			return v.$.id$ == newV.$.id$
+		},
 	)
+	if ok {
+		*old = *newV
+	} else {
+		d.$.name$ = append(d.$.name$, *newV)
+	}
+}
+
+func Delete$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
+	newV := (*$.elem|raw$)(pointer)
+	newSV, ok := keepalive.SwapDelete(
+		d.$.name$, func(v *$.elem|raw$) bool {
+			if v.$.id$ == newV.$.id$ {
+				return true
+			}
+			return false
+		},
+	)
+	if ok {
+		d.$.name$ = newSV
+	}
+}
+`, args,
+		)
+	}
 }
 
 func (g *genKeepAlive) genSlicePtrElem(ss *structOrSlice, t *types.Member) {
@@ -1144,9 +1185,10 @@ func (d *$.parent$) Delete$.elem|raw$(id $.idtyp|raw$) {
 }
 `, args,
 	)
-	if !isPtr {
-		sw.Do(
-			`
+	if g.usePool {
+		if !isPtr {
+			sw.Do(
+				`
 func Swap$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
 	newV := (*$.elem|raw$)(pointer)
 	old, ok := $.find$(
@@ -1183,10 +1225,10 @@ func Delete$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
 	newV.Reset()
 }
 `, args,
-		)
-	} else {
-		sw.Do(
-			`
+			)
+		} else {
+			sw.Do(
+				`
 func Swap$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
 	newV := (*$.elem|raw$)(pointer)
 	index := keepalive.SliceFindIndex(
@@ -1223,7 +1265,82 @@ func Delete$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
 	newV.Reset()
 }
 `, args,
-		)
+			)
+		}
+	} else {
+		if !isPtr {
+			sw.Do(
+				`
+func Swap$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
+	newV := (*$.elem|raw$)(pointer)
+	old, ok := $.find$(
+		d.$.name$, func(v *$.elem|raw$) bool {
+			if v.$.id$ == newV.$.id$ {
+				return true
+			}
+			return false
+		},
+	)
+	if ok {
+		*old = *newV
+	} else {
+		d.$.name$ = append(d.$.name$, *newV)
+	}
+}
+
+func Delete$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
+	newV := (*$.elem|raw$)(pointer)
+	newSV, ok := $.delete$(
+		d.$.name$, func(v *$.elem|raw$) bool {
+			if v.$.id$ == newV.$.id$ {
+				return true
+			}
+			return false
+		},
+	)
+	if ok {
+		d.$.name$ = newSV
+	}
+}
+`, args,
+			)
+		} else {
+			sw.Do(
+				`
+func Swap$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
+	newV := (*$.elem|raw$)(pointer)
+	index := keepalive.SliceFindIndex(
+		d.$.name$, func(v *$.elem|raw$) bool {
+			if v.$.id$ == newV.$.id$ {
+				return true
+			}
+			return false
+		},
+	)
+	if index>0 {
+		d.$.name$[index]=newV
+	} else {
+		d.$.name$ = append(d.$.name$, newV)
+	}
+}
+
+func Delete$.parent$$.elem|raw$(d *$.parent$, pointer unsafe.Pointer) {
+	newV := (*$.elem|raw$)(pointer)
+	newSV, ok := $.delete$(
+		d.$.name$, func(v *$.elem|raw$) bool {
+			if v.$.id$ == newV.$.id$ {
+				return true
+			}
+			return false
+		},
+	)
+	if ok {
+		d.$.name$ = newSV
+	}
+}
+`, args,
+			)
+		}
 	}
 }
 
@@ -1443,8 +1560,9 @@ func (d *$.parent$) Len$.elem|raw$() int {
 `, args,
 	)
 	// /////////////////////////////////////
-	sw.Do(
-		`
+	if g.usePool {
+		sw.Do(
+			`
 func Swap$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
 	u := (*$.elem|raw$)(p)
 	old, ok := d.$.name$[u.$.id$]
@@ -1467,8 +1585,25 @@ func Delete$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
 	u.Reset()
 }
 `,
-		args,
-	)
+			args,
+		)
+	} else {
+		sw.Do(
+			`
+func Swap$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
+	u:=*(*Item)(p)
+	d.$.name$[u.$.id$] = u
+}
+
+func Delete$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
+	u := (*$.elem|raw$)(p)
+	delete(d.$.name$, u.$.id$)
+}
+`,
+			args,
+		)
+
+	}
 }
 
 func (g *genKeepAlive) genMapPtrElem(ss *structOrSlice, t *types.Member) {
@@ -1697,8 +1832,9 @@ func (d *$.parent$) Len$.elem|raw$() int {
 `, args,
 	)
 	// /////////////////////////////////////
-	sw.Do(
-		`
+	if g.usePool {
+		sw.Do(
+			`
 func Swap$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
 	u := (*$.elem|raw$)(p)
 	old, ok := d.$.name$[u.$.id$]
@@ -1719,8 +1855,24 @@ func Delete$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
 	}
 }
 `,
-		args,
-	)
+			args,
+		)
+	} else {
+		sw.Do(
+			`
+func Swap$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
+	u := (*$.elem|raw$)(p)
+	d.$.name$[u.$.id$] = u
+}
+
+func Delete$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
+	u := (*$.elem|raw$)(p)
+	delete(d.$.name$, u.$.id$)
+}
+`,
+			args,
+		)
+	}
 }
 
 func (g *genKeepAlive) genFunc(ss *structOrSlice) {
@@ -1756,22 +1908,22 @@ func (g *genKeepAlive) genFunc(ss *structOrSlice) {
 		sw.Do("$.index$:Swap$.parent$$.type|raw$,\n", args)
 	}
 	sw.Do("}\n", nil)
-
-	sw.Do("var Reset$.$FuncSlice = [...]func(unsafe.Pointer){\n", ss.parentName)
-	for i, t := range names {
-		args := generator.Args{
-			"type":  t.Type,
-			"index": i,
-		}
-		sw.Do(
-			`$.index$: func( pointer unsafe.Pointer) {
+	if g.usePool {
+		sw.Do("var Reset$.$FuncSlice = [...]func(unsafe.Pointer){\n", ss.parentName)
+		for i, t := range names {
+			args := generator.Args{
+				"type":  t.Type,
+				"index": i,
+			}
+			sw.Do(
+				`$.index$: func( pointer unsafe.Pointer) {
 				(*$.type|raw$)(pointer).Reset()
 			},
 `, args,
-		)
+			)
+		}
+		sw.Do("}\n", nil)
 	}
-	sw.Do("}\n", nil)
-
 	/*
 		var ResetUserDataFuncSlice = [...]func( unsafe.Pointer){
 			0: func( pointer unsafe.Pointer) {
@@ -1841,26 +1993,26 @@ func (g *genKeepAlive) genFunc(ss *structOrSlice) {
 		sw.Do("$.index$:Delete$.parent$$.type|raw$,\n", args)
 	}
 	sw.Do("}\n", nil)
-
-	sw.Do("var ResetSlice$.$FuncSlice = [...]func(unsafe.Pointer){\n", ss.parentName)
-	for i, t := range names {
-		typ := t.Type.Elem
-		for typ.Kind == types.Pointer {
-			typ = typ.Elem
-		}
-		args := generator.Args{
-			"type":  typ,
-			"index": i,
-		}
-		sw.Do(
-			`$.index$: func( pointer unsafe.Pointer) {
+	if g.usePool {
+		sw.Do("var ResetSlice$.$FuncSlice = [...]func(unsafe.Pointer){\n", ss.parentName)
+		for i, t := range names {
+			typ := t.Type.Elem
+			for typ.Kind == types.Pointer {
+				typ = typ.Elem
+			}
+			args := generator.Args{
+				"type":  typ,
+				"index": i,
+			}
+			sw.Do(
+				`$.index$: func( pointer unsafe.Pointer) {
 				(*$.type|raw$)(pointer).Reset()
 			},
 `, args,
-		)
+			)
+		}
+		sw.Do("}\n", nil)
 	}
-	sw.Do("}\n", nil)
-
 	sw.Do(
 		`
 func (d *$.$)Init(){
@@ -1899,9 +2051,9 @@ func (d *$.$)Init(){
 	sw.Do("func (d *$.$)ClearKeepalive(){\n", ss.parentName)
 	sw.Do("d.KeepAlive.Clear(indexSliceType$.$[:], indexType$.$[:])", ss.parentName)
 	sw.Do("}\n", nil)
-
-	sw.Do(
-		`
+	if g.usePool {
+		sw.Do(
+			`
 func (d *$.$) Commit() {
 	for _, e := range d.Data {
 		if e.State == keepalive.KAStateSave {
@@ -1938,7 +2090,35 @@ func (d *$.$) Rollback() {
 	d.ClearKeepalive()
 }
 `, ss.parentName,
-	)
+		)
+	} else {
+		sw.Do(
+			`
+func (d *$.$) Commit() {
+	for _, e := range d.Data {
+		if e.State == keepalive.KAStateSave {
+			SaveUserDataFuncSlice[e.WriteIndex](d, e.Data)
+		} 
+	}
+
+	for _, es := range d.SliceData {
+		for _, e := range es {
+			if e.State == keepalive.KAStateSave {
+				SaveSliceUserDataFuncSlice[e.WriteIndex](d, e.Data)
+			} else if e.State == keepalive.KAStateDelete {
+				DeleteSliceUserDataFuncSlice[e.WriteIndex](d, e.Data)
+			}
+		}
+	}
+	d.ClearKeepalive()
+}
+
+func (d *$.$) Rollback() {
+	d.ClearKeepalive()
+}
+`, ss.parentName,
+		)
+	}
 }
 
 func (g *genKeepAlive) genDB(ss *structOrSlice) {

@@ -1,0 +1,1 @@
+protoc.exe -I. -I./proto  --gogogame_out=plugins=googleProto+newStringer:.. ./proto/*.proto

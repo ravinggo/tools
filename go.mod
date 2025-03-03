@@ -4,10 +4,13 @@ go 1.23.3
 
 require (
 	github.com/emicklei/proto v1.14.0
+	github.com/gogo/protobuf v1.3.2
 	github.com/google/gofuzz v1.2.0
 	github.com/huandu/xstrings v1.5.0
+	github.com/mailru/easyjson v0.7.7
 	github.com/spf13/pflag v1.0.6
 	github.com/stretchr/testify v1.10.0
+	google.golang.org/protobuf v1.35.1
 	k8s.io/apimachinery v0.32.2
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7
 	k8s.io/klog/v2 v2.130.1

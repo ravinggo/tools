@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mailru/easyjson/buffer"
 	"github.com/mailru/easyjson/jwriter"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type Any types.Any
@@ -34,4 +35,8 @@ func (m *Any) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{Buffer: buffer.Buffer{Buf: make([]byte, 2048)}}
 	m.MarshalEasyJSON(&w)
 	return w.Buffer.Buf, nil
+}
+
+func (m *Any) ProtoReflect() protoreflect.Message {
+	return nil
 }

@@ -376,7 +376,7 @@ func encodeVarintBase(dAtA []byte, offset int, v uint64) int {
 
 var _ = github_com_ravinggo_tools_jsonany.Any{}
 
-func (m *IntTrace) JsonBytes(w *github_com_mailru_easyjson_jwriter.Writer) {
+func (m *IntTrace) MarshalEasyJSON(w *github_com_mailru_easyjson_jwriter.Writer) {
 	if m == nil {
 		w.RawString("null")
 		return
@@ -430,7 +430,7 @@ func (m *IntTrace) JsonBytes(w *github_com_mailru_easyjson_jwriter.Writer) {
 
 }
 
-func (m *StringTrace) JsonBytes(w *github_com_mailru_easyjson_jwriter.Writer) {
+func (m *StringTrace) MarshalEasyJSON(w *github_com_mailru_easyjson_jwriter.Writer) {
 	if m == nil {
 		w.RawString("null")
 		return
@@ -486,7 +486,7 @@ func (m *StringTrace) JsonBytes(w *github_com_mailru_easyjson_jwriter.Writer) {
 
 func (m *IntTrace) MarshalJSON() ([]byte, error) {
 	w := github_com_mailru_easyjson_jwriter.Writer{Buffer: github_com_mailru_easyjson_buffer.Buffer{Buf: make([]byte, 0, 2048)}}
-	m.JsonBytes(&w)
+	m.MarshalEasyJSON(&w)
 	return w.BuildBytes()
 }
 func (m *IntTrace) String() string {
@@ -499,7 +499,7 @@ func (m *IntTrace) GoString() string {
 
 func (m *StringTrace) MarshalJSON() ([]byte, error) {
 	w := github_com_mailru_easyjson_jwriter.Writer{Buffer: github_com_mailru_easyjson_buffer.Buffer{Buf: make([]byte, 0, 2048)}}
-	m.JsonBytes(&w)
+	m.MarshalEasyJSON(&w)
 	return w.BuildBytes()
 }
 func (m *StringTrace) String() string {

@@ -158,7 +158,7 @@ func (p *stringer) Generate(file *generator.FileDescriptor) {
 		}
 		p.atleastOne = true
 		ccTypeName := generator.CamelCaseSlice(message.TypeName())
-		p.P(`func (m *`, ccTypeName, `) JsonBytes(w*`, p.jwriter.Use(), `.Writer) {`)
+		p.P(`func (m *`, ccTypeName, `) MarshalEasyJSON(w*`, p.jwriter.Use(), `.Writer) {`)
 		p.In()
 		p.P(`if m == nil {`)
 		p.In()
@@ -194,7 +194,7 @@ func (p *stringer) Generate(file *generator.FileDescriptor) {
 var jsonStr = `
 func (m* %s)MarshalJSON() ([]byte, error) {
 	w:=%s.Writer{Buffer:%s.Buffer{Buf:make([]byte,0,2048)}}
-	m.JsonBytes(&w)
+	m.MarshalEasyJSON(&w)
 	return w.BuildBytes()
 }
 func(m* %s) String()string  {
@@ -272,11 +272,11 @@ func (p *stringer) doOneValueField(field *descriptorpb.FieldDescriptorProto) str
 			tn := field.GetTypeName()
 			if tn == ".google.protobuf.Any" {
 				jsonStr += fmt.Sprintf(
-					`(*%s.Any)(v).JsonBytes(w)
+					`(*%s.Any)(v).MarshalEasyJSON(w)
 `, p.jsonAny.Use(),
 				)
 			} else {
-				jsonStr += `v.JsonBytes(w)
+				jsonStr += `v.MarshalEasyJSON(w)
 `
 			}
 		}
@@ -405,12 +405,12 @@ func (p *stringer) doOneField(field *descriptorpb.FieldDescriptorProto, isFirst 
 				tn := field.GetTypeName()
 				if tn == ".google.protobuf.Any" {
 					jsonStr += fmt.Sprintf(
-						`(*%s.Any)(m.%s).JsonBytes(w)
+						`(*%s.Any)(m.%s).MarshalEasyJSON(w)
 `, p.jsonAny.Use(), generator.CamelCase(field.GetName()),
 					)
 				} else {
 					jsonStr += fmt.Sprintf(
-						`m.%s.JsonBytes(w)
+						`m.%s.MarshalEasyJSON(w)
 `, generator.CamelCase(field.GetName()),
 					)
 				}

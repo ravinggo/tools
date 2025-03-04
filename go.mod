@@ -7,7 +7,9 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/gofuzz v1.2.0
 	github.com/huandu/xstrings v1.5.0
-	github.com/mailru/easyjson v0.7.7
+	github.com/mailru/easyjson v0.9.0
+	github.com/ravinggo/objectpool v1.0.1
+	github.com/ravinggo/zerolog v0.0.2
 	github.com/spf13/pflag v1.0.6
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/protobuf v1.35.1
@@ -19,6 +21,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	golang.org/x/mod v0.21.0 // indirect

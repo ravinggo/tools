@@ -25,7 +25,6 @@ func main() {
 	vanity.ForEachFile(files, vanity.TurnOffGoEnumStringerAll)
 	vanity.ForEachFile(files, vanity.TurnOnEnumStringerAll)
 
-	vanity.ForEachFile(files, vanity.TurnOnEqualAll)
 	vanity.ForEachFile(files, vanity.TurnOffGoStringerAll)
 	vanity.ForEachFile(files, vanity.TurnOnMessageNameAll)
 	generator.RegisterPlugin(google_proto.NewGoogleProto())

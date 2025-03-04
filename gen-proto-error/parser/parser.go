@@ -221,13 +221,25 @@ import (
 %s
 `, strings.Join(this_.dirs, ","), pkgName, stackError,
 	)
-	if !utils.IsDirExists(outPath) {
-		err := os.MkdirAll(outPath, os.ModePerm)
-		if err != nil {
-			Errorf("create dir[%s] failded:%v", outPath, err)
+	ext := filepath.Ext(outPath)
+	if ext != ".go" {
+		if !utils.IsDirExists(outPath) {
+			err := os.MkdirAll(outPath, os.ModePerm)
+			if err != nil {
+				Errorf("create dir[%s] failded:%v", outPath, err)
+			}
+		}
+		outPath = filepath.Join(outPath, "error_code.go")
+	} else {
+		dir, _ := filepath.Split(outPath)
+		if !utils.IsDirExists(dir) {
+			err := os.MkdirAll(dir, os.ModePerm)
+			if err != nil {
+				Errorf("create dir[%s] failded:%v", dir, err)
+			}
 		}
 	}
-	outPath = filepath.Join(outPath, "error_code.go")
+
 	err := os.WriteFile(outPath, []byte(str), os.ModePerm)
 	if err != nil {
 		Errorf("save [%s] failed:%v", outPath, err)

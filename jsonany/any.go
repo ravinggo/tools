@@ -8,7 +8,7 @@ import (
 
 type Any anypb.Any
 
-func (m *Any) JsonBytes(w *jwriter.Writer) {
+func (m *Any) MarshalEasyJSON(w *jwriter.Writer) {
 	if m == nil {
 		w.RawString("null")
 		return
@@ -32,6 +32,6 @@ func (m *Any) JsonBytes(w *jwriter.Writer) {
 
 func (m *Any) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{Buffer: buffer.Buffer{Buf: make([]byte, 2048)}}
-	m.JsonBytes(&w)
+	m.MarshalEasyJSON(&w)
 	return w.Buffer.Buf, nil
 }

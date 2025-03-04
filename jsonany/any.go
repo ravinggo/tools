@@ -1,12 +1,12 @@
 package jsonany
 
 import (
+	"github.com/gogo/protobuf/types"
 	"github.com/mailru/easyjson/buffer"
 	"github.com/mailru/easyjson/jwriter"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
-type Any anypb.Any
+type Any types.Any
 
 func (m *Any) MarshalEasyJSON(w *jwriter.Writer) {
 	if m == nil {

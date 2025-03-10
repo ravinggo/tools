@@ -351,9 +351,8 @@ func NewGenDeepCopy(outputFilename, targetPackage string, boundingDirs []string,
 	if dc.usePool {
 		dc.imports = generator.NewImportTrackerForPackage(
 			targetPackage,
+			&types.Type{Name: types.Name{Package: "github.com/ravinggo/tools/deepcopy-gen/slicepool"}},
 			&types.Type{Name: types.Name{Package: "sync"}},
-			&types.Type{Name: types.Name{Package: "math/bits"}},
-			&types.Type{Name: types.Name{Package: "unsafe"}},
 		)
 	} else {
 		dc.imports = generator.NewImportTrackerForPackage(targetPackage)
@@ -640,69 +639,9 @@ func (g *genDeepCopy) Finalize(c *generator.Context, w io.Writer) error {
 			name := gsp.Name(ut)
 			if _, ok := poolFilter[name]; !ok {
 				poolFilter[name] = struct{}{}
-				sw.Do("var $.|genspool$ = newSlicePool[$.Elem|raw$]()\n", t)
+				sw.Do("var $.|genspool$ = slicepool.NewSlicePool[$.Elem|raw$]()\n", t)
 			}
 		}
-		sw.Do(
-			`
-type slice struct {
-	Data unsafe.Pointer
-	Len  int
-	Cap  int
-}
-
-type slicePool[T any] struct {
-	pools [32]sync.Pool
-}
-
-func newSlicePool[T any]() slicePool[T] {
-	return slicePool[T]{}
-}
-
-func index(n uint32) uint32 {
-	return uint32(bits.Len32(n - 1))
-}
-
-func (p *slicePool[T]) Get(size int) []T {
-	c := size
-    // Small memory allocation is too scattered. the reuse rate is relatively high, types start with len=16
-	if c < 16 {
-		c = 16
-	}
-	idx := index(uint32(c))
-	if v := p.pools[idx].Get(); v != nil {
-		bp := v.(unsafe.Pointer)
-		x := (*int32)(bp)
-		c := *x
-		*x = 0
-		s := &slice{
-			Data: bp,
-			Len:  size,
-			Cap:  int(c),
-		}
-		return *(*[]T)(unsafe.Pointer(s))
-	}
-	return make([]T, size, 1<<idx)
-}
-
-func (p *slicePool[T]) Put(value []T) {
-	c:=cap(value)
-	if c < 16 {
-		return
-	}
-	idx := index(uint32(c))
-    // []T not obtained by Get is placed in the Pool of the previous index
-	if c != 1<<idx { 
-		idx--
-	}
-	clear(value)
-	slice := (*slice)(unsafe.Pointer(&value))
-	x := (*int32)(slice.Data)
-	*x = int32(c)
-	p.pools[idx].Put(slice.Data)
-}
-`, nil,
-		)
 	}
 	return nil
 }

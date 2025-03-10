@@ -277,3 +277,4 @@ var map_int32_map_int64_int64__Pool = sync.Pool{New: func() any { return make(ma
 var map_int64_bool_Pool = sync.Pool{New: func() any { return make(map[int64]bool, 16) }}
 var map_int64_int64_Pool = sync.Pool{New: func() any { return make(map[int64]int64, 16) }}
 var s_stringSPool = slicepool.NewSlicePool[string]()
+var _ = slicepool.SlicePool[struct{}]{}

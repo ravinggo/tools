@@ -69,3 +69,4 @@ func (in *Ttest) ResetOnlySelf() {
 }
 
 var TtestPool = sync.Pool{New: func() any { return new(Ttest) }}
+var _ = slicepool.SlicePool[struct{}]{}

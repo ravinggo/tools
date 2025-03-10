@@ -527,3 +527,4 @@ var s_uint16SPool = slicepool.NewSlicePool[uint16]()
 var s_uint32SPool = slicepool.NewSlicePool[uint32]()
 var s_uint64SPool = slicepool.NewSlicePool[uint64]()
 var s_uint8SPool = slicepool.NewSlicePool[uint8]()
+var _ = slicepool.SlicePool[struct{}]{}

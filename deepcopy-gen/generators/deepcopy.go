@@ -642,6 +642,8 @@ func (g *genDeepCopy) Finalize(c *generator.Context, w io.Writer) error {
 				sw.Do("var $.|genspool$ = slicepool.NewSlicePool[$.Elem|raw$]()\n", t)
 			}
 		}
+
+		sw.Do("var _ = slicepool.SlicePool[struct{}]{}", nil)
 	}
 	return nil
 }

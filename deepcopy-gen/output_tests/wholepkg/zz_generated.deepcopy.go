@@ -1964,3 +1964,4 @@ var s_StructPrimitivesSPool = slicepool.NewSlicePool[StructPrimitives]()
 var s_StructPrimitivesAliasSPool = slicepool.NewSlicePool[StructPrimitivesAlias]()
 var s_intSPool = slicepool.NewSlicePool[int]()
 var s_stringSPool = slicepool.NewSlicePool[string]()
+var _ = slicepool.SlicePool[struct{}]{}

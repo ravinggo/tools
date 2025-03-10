@@ -1056,3 +1056,4 @@ var s_AliasInterfaceSPool = slicepool.NewSlicePool[AliasInterface]()
 var s_FooSPool = slicepool.NewSlicePool[Foo]()
 var s_SliceSPool = slicepool.NewSlicePool[Slice]()
 var s_intSPool = slicepool.NewSlicePool[int]()
+var _ = slicepool.SlicePool[struct{}]{}

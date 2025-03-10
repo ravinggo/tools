@@ -693,3 +693,4 @@ var map_string_uint32_Pool = sync.Pool{New: func() any { return make(map[string]
 var map_string_uint64_Pool = sync.Pool{New: func() any { return make(map[string]uint64, 16) }}
 var map_string_uint8_Pool = sync.Pool{New: func() any { return make(map[string]uint8, 16) }}
 var s_stringSPool = slicepool.NewSlicePool[string]()
+var _ = slicepool.SlicePool[struct{}]{}

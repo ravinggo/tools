@@ -25,6 +25,7 @@ import (
 	unsafe "unsafe"
 
 	keepalive "github.com/ravinggo/tools/keepalive-gen/keepalive"
+	bson "go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func (d *UserData) GetUserReadOnly() *User {
@@ -724,7 +725,7 @@ func DeleteUserDataHistory(d *UserData, pointer unsafe.Pointer) {
 	newV.Reset()
 }
 
-func (d *UserData) GetDomain(id int64) (*Domain, bool) {
+func (d *UserData) GetDomain(id bson.ObjectID) (*Domain, bool) {
 	index := d.DomainKAIndex()
 	i := d.SDUsed[index]
 	var kas *[]keepalive.KAElem
@@ -778,7 +779,7 @@ func (d *UserData) RangeDomains(f func(v *Domain) bool) {
 			}
 		}
 	} else {
-		m := make(map[int64]*keepalive.KAElem, len(*kas))
+		m := make(map[bson.ObjectID]*keepalive.KAElem, len(*kas))
 		for i, v := range *kas {
 			if v.NoOrigin != 0 {
 				if v.State == keepalive.KAStateSave {
@@ -880,7 +881,7 @@ func (d *UserData) LenDomain() int {
 	return count
 }
 
-func (d *UserData) DeleteDomain(id int64) {
+func (d *UserData) DeleteDomain(id bson.ObjectID) {
 	index := d.DomainKAIndex()
 	i := d.SDUsed[index]
 	var kas *[]keepalive.KAElem
@@ -1382,25 +1383,60 @@ var dbUserDataSliceFunc = [...]func(dbFace DBUserDataInterface, e *keepalive.KAE
 		return nil
 	},
 }
+var _ = bson.NilObjectID
 
-func (Domain) TableName() string {
+func (*Domain) TableName() string {
 	return "domain"
 }
+func (v *Domain) PK() bson.ObjectID {
+	if v.A == bson.NilObjectID {
+		v.A = bson.NewObjectID()
+	}
+	return v.A
+}
 
-func (Fight) TableName() string {
+func (*Fight) TableName() string {
 	return "fight"
 }
+func (v *Fight) PK() int64 {
+	var zero int64
+	if v.A == zero {
+		panic("PK() is zero value")
+	}
+	return v.A
+}
 
-func (History) TableName() string {
+func (*History) TableName() string {
 	return "history"
 }
-
-func (Item) TableName() string {
-	return "item"
+func (v *History) PK() int {
+	var zero int
+	if v.A == zero {
+		panic("PK() is zero value")
+	}
+	return v.A
 }
 
-func (Player) TableName() string {
+func (*Item) TableName() string {
+	return "item"
+}
+func (v *Item) PK() int64 {
+	var zero int64
+	if v.ID == zero {
+		panic("PK() is zero value")
+	}
+	return v.ID
+}
+
+func (*Player) TableName() string {
 	return "player"
+}
+func (v *Player) PK() int64 {
+	var zero int64
+	if v.PID == zero {
+		panic("PK() is zero value")
+	}
+	return v.PID
 }
 
 var dbUserDataFunc = [...]func(dbFace DBUserDataInterface, e *keepalive.KAElem) error{
@@ -1409,8 +1445,15 @@ var dbUserDataFunc = [...]func(dbFace DBUserDataInterface, e *keepalive.KAElem) 
 	},
 }
 
-func (User) TableName() string {
+func (*User) TableName() string {
 	return "user"
+}
+func (v *User) PK() int {
+	var zero int
+	if v.ID == zero {
+		panic("PK() is zero value")
+	}
+	return v.ID
 }
 
 func (d *UserData) DoDB(dbFace DBUserDataInterface) error {

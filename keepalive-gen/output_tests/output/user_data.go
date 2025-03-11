@@ -3,40 +3,42 @@
 package output
 
 import (
+	"go.mongodb.org/mongo-driver/v2/bson"
+
 	"github.com/ravinggo/tools/keepalive-gen/keepalive"
 )
 
 type User struct {
-	ID   int `key_id`
+	ID   int `bson:"_id" key_id`
 	Name string
 	Age  int
 }
 
 type Item struct {
-	ID    int64 `key_id`
+	ID    int64 `bson:"_id" key_id`
 	CID   int64
 	Value int64
 }
 
 type Player struct {
-	PID  int64 `key_id`
+	PID  int64 `bson:"_id" key_id`
 	User User
 }
 
 type History struct {
-	A int `key_id`
+	A int `bson:"_id" key_id`
 	B int64
 	C string
 }
 
 type Domain struct {
-	A int64 `key_id`
+	A bson.ObjectID `bson:"_id" key_id`
 	B int
 	C []string
 }
 
 type Fight struct {
-	A int64 `key_id`
+	A int64 `bson:"_id" key_id`
 	B int
 	C []string
 }

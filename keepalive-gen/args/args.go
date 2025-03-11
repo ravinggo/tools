@@ -26,6 +26,7 @@ type Args struct {
 	OutputFile   string
 	GoHeaderFile string
 	UsePool      bool
+	UseMongo     bool
 }
 
 // New returns default arguments for the generator.
@@ -47,6 +48,9 @@ func (args *Args) AddFlags(fs *pflag.FlagSet) {
 	)
 	fs.BoolVar(
 		&args.UsePool, "use-pool", true, "use sync.Pool mode",
+	)
+	fs.BoolVar(
+		&args.UseMongo, "use-mongo", true, "use mongodb",
 	)
 }
 

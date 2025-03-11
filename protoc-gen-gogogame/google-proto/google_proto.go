@@ -36,4 +36,5 @@ func (p *googleProto) Generate(file *generator.FileDescriptor) {
 		p.P(`   return nil`)
 		p.P(`}`)
 	}
+	p.P(`var _ `, p.protoreflect.Use(), `.FullName = ""`)
 }

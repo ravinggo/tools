@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/huandu/xstrings"
 	"k8s.io/gengo/v2"
 	"k8s.io/gengo/v2/generator"
 	"k8s.io/gengo/v2/namer"
@@ -2182,6 +2183,20 @@ func (g *genKeepAlive) genDB(ss *structOrSlice) {
 		)
 	}
 	sw.Do("}\n", nil)
+	for _, t := range names {
+		typ := t.Type.Elem
+		for typ.Kind == types.Pointer {
+			typ = typ.Elem
+		}
+
+		sw.Do(
+			`
+func ($.typ|raw$)TableName()string{
+	return "$.tn$"
+} 
+`, generator.Args{"typ": typ, "tn": xstrings.ToSnakeCase(typ.Name.Name)},
+		)
+	}
 	names = names[:0]
 	for t := range ss.structType {
 		names = append(names, t)
@@ -2208,7 +2223,15 @@ func (g *genKeepAlive) genDB(ss *structOrSlice) {
 		)
 	}
 	sw.Do("}\n", nil)
-
+	for _, t := range names {
+		sw.Do(
+			`
+func ($.typ|raw$)TableName()string{
+	return "$.tn$"
+} 
+`, generator.Args{"typ": t.Type, "tn": xstrings.ToSnakeCase(t.Type.Name.Name)},
+		)
+	}
 	sw.Do(
 		`
 func (d *$.$) DoDB(dbFace DBUserDataInterface)error {

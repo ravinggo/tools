@@ -2210,7 +2210,7 @@ func (*$.typ|raw$)TableName()string{
 }
 `, args,
 			)
-			sw.Do("func (v *$.typ|raw$)PK() $._idType|raw${", args)
+			sw.Do("func (v *$.typ|raw$)PK() any {", args)
 			if fieldTypeName.String() == objectIDName {
 				sw.Do("if v.$._id$ == bson.NilObjectID{v.$._id$ = bson.NewObjectID()}\n", args)
 			} else {
@@ -2263,7 +2263,7 @@ func (*$.typ|raw$)TableName()string{
 }
 `, args,
 			)
-			sw.Do("func (v *$.typ|raw$)PK() $._idType|raw${", args)
+			sw.Do("func (v *$.typ|raw$)PK() any {", args)
 			if fieldTypeName.String() == objectIDName {
 				sw.Do("if v.$._id$ == bson.NilObjectID{v.$._id$ = bson.NewObjectID()}\n", args)
 			} else {

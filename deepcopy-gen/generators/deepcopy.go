@@ -1324,9 +1324,7 @@ func (g *genDeepCopy) doStruct(t *types.Type, sw *generator.SnippetWriter) {
 		case uft.Kind == types.Array:
 			sw.Do("out.$.name$ = in.$.name$\n", args)
 		case uft.Kind == types.Struct:
-			if ft.IsAssignable() {
-				sw.Do("out.$.name$ = in.$.name$\n", args)
-			} else {
+			if !ft.IsAssignable() {
 				sw.Do("in.$.name$.DeepCopyInto(&out.$.name$)\n", args)
 			}
 		case uft.Kind == types.Interface:

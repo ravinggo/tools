@@ -193,7 +193,7 @@ func (this_ *Parser) OutputErrorCodeGoCode(pkgName, outPath string) {
 			stackError += fmt.Sprintf(
 				`
 func New%s(extra ...string) *berror.ErrMsg {
-	e := &berror.ErrMsg()
+	e := &berror.ErrMsg{}
 	e.ErrCode = %s
 	e.ErrMsg = "%s"
 	if berror.IsOpenStack() {

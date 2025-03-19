@@ -2069,20 +2069,20 @@ func (d *$.$)Init(){
 func (d *$.$) Commit() {
 	for _, e := range d.Data {
 		if e.State == keepalive.KAStateSave {
-			SaveUserDataFuncSlice[e.WriteIndex](d, e.Data)
+			Save$.$FuncSlice[e.WriteIndex](d, e.Data)
 		} else {
-			ResetUserDataFuncSlice[e.WriteIndex](e.Data)
+			Reset$.$FuncSlice[e.WriteIndex](e.Data)
 		}
 	}
 
 	for _, es := range d.SliceData {
 		for _, e := range es {
 			if e.State == keepalive.KAStateSave {
-				SaveSliceUserDataFuncSlice[e.WriteIndex](d, e.Data)
+				SaveSlice$.$FuncSlice[e.WriteIndex](d, e.Data)
 			} else if e.State == keepalive.KAStateDelete {
-				DeleteSliceUserDataFuncSlice[e.WriteIndex](d, e.Data)
+				DeleteSlice$.$FuncSlice[e.WriteIndex](d, e.Data)
 			} else {
-				ResetSliceUserDataFuncSlice[e.WriteIndex](e.Data)
+				ResetSlice$.$FuncSlice[e.WriteIndex](e.Data)
 			}
 		}
 	}
@@ -2091,12 +2091,12 @@ func (d *$.$) Commit() {
 
 func (d *$.$) Rollback() {
 	for _, e := range d.Data {
-		ResetUserDataFuncSlice[e.WriteIndex](e.Data)
+		Reset$.$FuncSlice[e.WriteIndex](e.Data)
 	}
 
 	for _, es := range d.SliceData {
 		for _, e := range es {
-			ResetSliceUserDataFuncSlice[e.WriteIndex](e.Data)
+			ResetSlice$.$FuncSlice[e.WriteIndex](e.Data)
 		}
 	}
 	d.ClearKeepalive()
@@ -2109,16 +2109,16 @@ func (d *$.$) Rollback() {
 func (d *$.$) Commit() {
 	for _, e := range d.Data {
 		if e.State == keepalive.KAStateSave {
-			SaveUserDataFuncSlice[e.WriteIndex](d, e.Data)
+			Save$.$FuncSlice[e.WriteIndex](d, e.Data)
 		} 
 	}
 
 	for _, es := range d.SliceData {
 		for _, e := range es {
 			if e.State == keepalive.KAStateSave {
-				SaveSliceUserDataFuncSlice[e.WriteIndex](d, e.Data)
+				SaveSlice$.$FuncSlice[e.WriteIndex](d, e.Data)
 			} else if e.State == keepalive.KAStateDelete {
-				DeleteSliceUserDataFuncSlice[e.WriteIndex](d, e.Data)
+				DeleteSlice$.$FuncSlice[e.WriteIndex](d, e.Data)
 			}
 		}
 	}

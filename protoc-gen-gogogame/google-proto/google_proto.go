@@ -31,6 +31,9 @@ func (p *googleProto) Generate(file *generator.FileDescriptor) {
 	}
 
 	for _, message := range file.Messages() {
+		if message.DescriptorProto.GetOptions().GetMapEntry() {
+			continue
+		}
 		ccTypeName := generator.CamelCaseSlice(message.TypeName())
 		p.P(`func (m *`, ccTypeName, `) ProtoReflect() `, p.protoreflect.Use(), `.Message {`)
 		p.P(`   return nil`)

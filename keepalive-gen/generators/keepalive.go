@@ -2287,7 +2287,8 @@ func (d *$.$) DoDB(dbFace DB$.$Interface)error {
 		}
 	}
 
-	for _,index:=range d.WI{
+	for _,si:=range d.WSI{
+		index:=si>>32
 		es:=d.SliceData[index]
 		for i:=range es{
 			e:=&es[i]

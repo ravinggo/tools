@@ -2289,7 +2289,7 @@ func (d *$.$) DoDB(dbFace DB$.$Interface)error {
 
 	for _,si:=range d.WSI{
 		index:=si>>32
-		es:=d.SliceData[index]
+		es:=d.SliceData[d.SDUsed[index]]
 		for i:=range es{
 			e:=&es[i]
 			if err:=db$.$SliceFunc[index](dbFace,e);err!=nil{

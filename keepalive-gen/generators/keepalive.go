@@ -596,7 +596,7 @@ func (g *genKeepAlive) genStruct(ss *structOrSlice, t *types.Member) {
 	sw.Do(
 		`e.Data = unsafe.Pointer(x)
 			e.State = keepalive.KAStateRead
-			
+			e.WriteIndex = index
 			return x
 `, args,
 	)
@@ -1011,6 +1011,7 @@ func (g *genKeepAlive) genSlicePtrElem(ss *structOrSlice, t *types.Member) {
 		*kas, keepalive.KAElem{
 			Data:  unsafe.Pointer(v),
 			State: keepalive.KAStateRead,
+			WriteIndex: index,
 		},
 	)
 	return v, true
@@ -1663,6 +1664,7 @@ func (d *$.parent$) Get$.elem|raw$(id $.key|raw$) (*$.elem|raw$, bool) {
 		*kas, keepalive.KAElem{
 			Data:       unsafe.Pointer(v),
 			State:      keepalive.KAStateRead,
+			WriteIndex: index,
 		},
 	)
 	return v, ok

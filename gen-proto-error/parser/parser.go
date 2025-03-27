@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/emicklei/proto"
+	"github.com/xuri/excelize/v2"
 
 	"github.com/ravinggo/tools/utils"
 )
@@ -44,6 +46,7 @@ type Parser struct {
 	enumsModels map[string][]*ErrorInfo
 	Files       []*File
 	dirs        []string
+	sheetName   string
 }
 
 func NewParser(dir string) (*Parser, error) {
@@ -75,6 +78,7 @@ func NewParser(dir string) (*Parser, error) {
 		ext:         map[string]*proto.Message{},
 		enumsModels: map[string][]*ErrorInfo{},
 		dirs:        dirs,
+		sheetName:   "error_code",
 	}, nil
 }
 
@@ -167,6 +171,66 @@ func (this_ *Parser) OutputErrorCodeTxt(outPath string) {
 	err := os.WriteFile(outPath, b.Bytes(), 0666)
 	if err != nil {
 		Errorf("保存[%s]失败：%v", outPath, err)
+	}
+}
+
+func (this_ *Parser) OutputErrorCodeExcel(outPath string) {
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			Errorf("close excel file error:%v", err)
+		}
+	}()
+
+	index, err := f.NewSheet(this_.sheetName)
+	if err != nil {
+		Errorf("new sheet error:%v", err)
+	}
+	f.SetActiveSheet(index)
+	this_.setValue(f, "A1", "##var")
+	this_.setValue(f, "B1", "id")
+	this_.setValue(f, "C1", "zhCN")
+	this_.setValue(f, "A2", "##type")
+	this_.setValue(f, "B2", "string")
+	this_.setValue(f, "C2", "string")
+	this_.setValue(f, "A3", "##")
+	this_.setValue(f, "C3", "ChineseSimplified")
+	this_.setValue(f, "A4", "##comment")
+	this_.setValue(f, "B4", "key")
+	this_.setValue(f, "C4", "(简体中文)40")
+
+	keys := make([]string, 0, len(this_.enumsModels))
+	for k := range this_.enumsModels {
+		keys = append(keys, k)
+	}
+	sort.Slice(
+		keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		},
+	)
+	indexCell := 4
+	for i := 0; i < len(keys); i++ {
+		vs := this_.enumsModels[keys[i]]
+		for _, v := range vs {
+			indexCell++
+			indexStr := strconv.Itoa(indexCell)
+			this_.setValue(f, "B"+indexStr, v.TipName)
+			this_.setValue(f, "C"+indexStr, v.TipDesc)
+		}
+	}
+	err = f.DeleteSheet("Sheet1")
+	if err != nil {
+		Errorf("delete excel Sheet1 error:%v", err)
+	}
+	if err := f.SaveAs(outPath); err != nil {
+		Errorf("save excel file error:%v", err)
+	}
+}
+
+func (this_ *Parser) setValue(file *excelize.File, cell string, value any) {
+	err := file.SetCellValue(this_.sheetName, cell, value)
+	if err != nil {
+		Errorf("set value error:%v", err)
 	}
 }
 

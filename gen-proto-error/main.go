@@ -9,6 +9,7 @@ import (
 
 var parseDir = flag.String("parseDir", ".", "the dir of proto with error code")
 var txtPath = flag.String("txtPath", "./error_code.txt", "output txt path")
+var excelPath = flag.String("excelPath", "./error_code.xlsx", "output excel path")
 var goPath = flag.String("goPath", "../errmsg", "output go code path")
 var pkgName = flag.String("pkgName", "errmsg", "package name")
 
@@ -24,6 +25,7 @@ func main() {
 	}
 	p.Check()
 	p.OutputErrorCodeTxt(*txtPath)
+	p.OutputErrorCodeExcel(*excelPath)
 	p.OutputErrorCodeGoCode(*pkgName, *goPath)
 	fmt.Println("success")
 }

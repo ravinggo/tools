@@ -78,7 +78,7 @@ func NewParser(dir string) (*Parser, error) {
 		ext:         map[string]*proto.Message{},
 		enumsModels: map[string][]*ErrorInfo{},
 		dirs:        dirs,
-		sheetName:   "error_code",
+		sheetName:   "language",
 	}, nil
 }
 

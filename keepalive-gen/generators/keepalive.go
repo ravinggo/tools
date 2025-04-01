@@ -2283,7 +2283,7 @@ func (*$.typ|raw$)TableName()string{
 		`
 func (d *$.$) DoDB(dbFace DB$.$Interface)error {
 	for _,index:=range d.WI{
-		e:=&d.Data[index]
+		e:=&d.Data[d.DUsed[index]]
 		if err:=db$.$Func[index](dbFace,e);err!=nil{
 			return err
 		}

@@ -1427,7 +1427,7 @@ func (d *$.parent$) Len$.elem|raw$() int {
 	sw.Do(
 		`
 func Swap$.parent$$.elem|raw$(d *$.parent$, p unsafe.Pointer) {
-	u:=*(*Item)(p)
+	u:=*(*$.elem|raw$)(p)
 	d.$.name$[u.$.id$] = u
 }
 

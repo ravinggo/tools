@@ -1492,6 +1492,31 @@ func (d *$.parent$) Get$.elem|raw$(id $.key|raw$) (*$.elem|raw$, bool) {
 }
 `, args,
 	)
+	// ////////////////////////////////////////////////////
+	sw.Do(
+		`
+func (d *$.parent$) Get$.elem|raw$ReadOnly(id $.key|raw$) (*$.elem|raw$, bool) {
+	index := d.$.elem|raw$KAIndex()
+	i := d.SDUsed[index]
+	var kas *[]keepalive.KAElem
+	if i != -1 {
+		kas = &d.SliceData[i]
+	}
+	if kas != nil {
+		v, state := keepalive.SliceFindKA(
+			*kas, func(da *$.elem|raw$) bool {
+				return da.$.id$ == id
+			},
+		)
+		if state != 0 {
+			return v, state == 1
+		}
+	}
+	origin, ok := d.$.name$[id]
+	return origin, ok
+}
+`, args,
+	)
 	// /////////////////////////////////////////////////////
 	sw.Do(
 		`

@@ -658,8 +658,10 @@ func (g *genKeepAlive) genSlice(ss *structOrSlice, t *types.Member) {
 			return v.$.id$ == id
 		},
 	)
-	if state != 0 {
+	if state == 1 {
 		return *v, state == 1
+	}else if state == -1{
+		return $.elem|raw${},false
 	}
 		
 	for _,v:=range d.$.name${
@@ -1241,8 +1243,10 @@ func (d *$.parent$) Get$.elem|raw$(id $.key|raw$) ($.elem|raw$, bool) {
 			return da.$.id$ == id
 		},
 	)
-	if state != 0 {
+	if state == 1 {
 		return *v, state == 1
+	}else if state == -1{
+		return $.elem|raw${},false
 	}
 	origin, ok := d.$.name$[id]
 	return origin, ok

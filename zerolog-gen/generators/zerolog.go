@@ -3,6 +3,7 @@ package generators
 import (
 	"io"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"k8s.io/gengo/v2"
@@ -189,25 +190,32 @@ func (g *genZeroLog) GenerateType(c *generator.Context, t *types.Type, w io.Writ
 		return nil
 	}
 
-	klog.V(2).Infof("Generating ZeroLog functions for type %v", t)
+	klog.V(2).Infof("Generating ZeroLog functions for type %v", t.Name.String())
 	sw := generator.NewSnippetWriter(w, c, "$", "$")
-
+	TypePKGName := t.Name.Name
+	if t.Name.Package != "" {
+		TypePKGName = filepath.Base(t.Name.Package) + "." + t.Name.Name
+	}
+	args := generator.Args{
+		"type":          t,
+		"type_pkg_name": TypePKGName,
+	}
 	sw.Do(
 		`
-func (m *$.|raw$) MarshalZerologObject(e*zerolog.Event)  {
+func (m *$.type|raw$) MarshalZerologObject(e*zerolog.Event)  {
 	b:=objectpool.GetBytes(2048)
 	defer objectpool.PutBytes(b)
 	w := jwriter.Writer{Buffer: buffer.Buffer{Buf: b}}
 	m.MarshalEasyJSON(&w)
 	d,err:=w.BuildBytes()
 	if err!=nil{
-		e.Str("$.|raw$ error",err.Error())
+		e.Str("$.type_pkg_name$ error",err.Error())
 	}else {
-		e.RawJSON("$.|raw$",d)
+		e.RawJSON("$.type_pkg_name$",d)
 	}
 }
 `,
-		t,
+		args,
 	)
 	return sw.Error()
 }

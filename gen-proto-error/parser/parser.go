@@ -215,7 +215,7 @@ func (this_ *Parser) OutputErrorCodeExcel(outPath string) {
 			indexCell++
 			indexStr := strconv.Itoa(indexCell)
 			this_.setValue(f, "B"+indexStr, v.TipName)
-			this_.setValue(f, "C"+indexStr, v.TipDesc)
+			this_.setValue(f, "A"+indexStr, v.TipDesc)
 		}
 	}
 	err = f.DeleteSheet("Sheet1")

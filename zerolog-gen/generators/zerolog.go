@@ -136,7 +136,6 @@ func NewGenKeepAlive(outputFilename, targetPackage string, usePool bool) generat
 		&types.Type{Name: types.Name{Package: "github.com/ravinggo/objectpool"}},
 		&types.Type{Name: types.Name{Package: "github.com/ravinggo/zerolog"}},
 		&types.Type{Name: types.Name{Package: "github.com/mailru/easyjson/jwriter"}},
-		&types.Type{Name: types.Name{Package: "github.com/mailru/easyjson/buffer"}},
 	)
 	return dc
 }
@@ -203,11 +202,11 @@ func (g *genZeroLog) GenerateType(c *generator.Context, t *types.Type, w io.Writ
 	sw.Do(
 		`
 func (m *$.type|raw$) MarshalZerologObject(e*zerolog.Event)  {
-	b:=objectpool.GetBytes(2048)
-	defer objectpool.PutBytes(b)
-	w := jwriter.Writer{Buffer: buffer.Buffer{Buf: b}}
+	var w jwriter.Writer
 	m.MarshalEasyJSON(&w)
-	d,err:=w.BuildBytes()
+	b:=objectpool.GetBytes(w.Size())
+	defer objectpool.PutBytes(b)
+	d,err:=w.BuildBytes(b)
 	if err!=nil{
 		e.Str("$.type_pkg_name$ error",err.Error())
 	}else {
